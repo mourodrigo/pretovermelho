@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 struct jsw_node;
 struct jsw_tree;
 
@@ -69,6 +70,8 @@ int jsw_rb_assert ( struct jsw_node *root )
     if ( root == NULL )
         return 1;
     else {
+        printf("\nverificando nodo: %d", root->data);
+        
         struct jsw_node *ln = root->link[0];
         struct jsw_node *rn = root->link[1];
         
@@ -104,6 +107,17 @@ int jsw_rb_assert ( struct jsw_node *root )
             return 0;
     }
 }
+
+int verificaArvore(struct jsw_node *root){
+  
+    if (jsw_rb_assert(root)>0) {
+        return 1;
+    }else{
+        return 0;
+    }
+    
+}
+
 
 
 struct jsw_node *make_node ( int data ){
@@ -385,6 +399,24 @@ int jsw_remove ( struct jsw_tree *tree, int data )
     return 1;
 }
 
+struct jsw_node *search_node(int searchValue, struct jsw_node *t){
+	
+	if (t == NULL){
+		return NULL;
+	}else{
+		if(t->data == searchValue){
+			return t;
+		}else{
+			struct jsw_node *found;
+			found = search_node(searchValue,t->link[0]);
+            if(found == NULL){
+                found = search_node(searchValue,t->link[1]);
+            }
+        }
+    }
+    return NULL;
+}
+
 void Tree_inOrder(struct jsw_node *n) /*see declaration of TNode below*/
 
 {
@@ -401,6 +433,23 @@ void Tree_inOrder(struct jsw_node *n) /*see declaration of TNode below*/
     
 }
 
+
+void print_at_level_recursive(struct jsw_node *n, int desired, int current)
+{
+    
+    if (n)
+    {
+        if (desired == current)
+            printf("%d ", n->data);
+        else
+        {
+            print_at_level_recursive(n->link[0], desired, current + 1);
+            print_at_level_recursive(n->link[1], desired, current + 1);
+        }
+    }
+}
+
+
 void menu(){
     
     printf("\n1 - Inserir");
@@ -416,6 +465,14 @@ void menu(){
     
 }
 
+int verificaNodo(struct jsw_node *n){
+    if (n) {
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
 int main(int argc, const char * argv[])
 {
  
@@ -426,13 +483,13 @@ int main(int argc, const char * argv[])
     
     int valor = 0;
     
-    
     int opcao = 0;
     while (opcao!=8) {
         
         menu();
         scanf("%d", &opcao);
 
+        
         if (opcao!=8) {
             switch (opcao) {
                 case 1:
@@ -453,12 +510,30 @@ int main(int argc, const char * argv[])
                     Tree_inOrder(root->root);
                     break;
                 case 4:
+                    printf("\n Nivel a ser impresso: ");
+                    scanf("%d", &valor);
+                    print_at_level_recursive(root->root, valor, 0);
                     break;
                 case 5:
+                    printf("\n Valor à ser procurado: ");
+                    scanf("%d", &valor);
+                    
+                    if(verificaNodo(search_node(valor, root->root))){
+                        printf("TRUE");
+                    }else{
+                        printf("FALSE");
+                    }
+                    
                     break;
                 case 6:
+                    if(verificaArvore(root->root)){
+                        printf("TRUE");
+                    }else{
+                        printf("FALSE");
+                    }
                     break;
                 case 7:
+                    
                     break;
                 default:
                     break;
