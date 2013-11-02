@@ -385,6 +385,22 @@ int jsw_remove ( struct jsw_tree *tree, int data )
     return 1;
 }
 
+void Tree_inOrder(struct jsw_node *n) /*see declaration of TNode below*/
+
+{
+    
+    if(n==0)
+        
+        return;
+    
+    Tree_inOrder(n->link[0]);
+    
+    printf("%d ", n->data);
+    
+    Tree_inOrder(n->link[1]);
+    
+}
+
 void menu(){
     
     printf("\n1 - Inserir");
@@ -434,6 +450,7 @@ int main(int argc, const char * argv[])
                     jsw_remove ( root, valor );
                     break;
                 case 3:
+                    Tree_inOrder(root->root);
                     break;
                 case 4:
                     break;
