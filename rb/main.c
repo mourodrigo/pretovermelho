@@ -2,7 +2,7 @@
 //  main.c
 //  rb
 //
-//  Created by Rodrigo Bueno Tomiosso on 27/10/13.
+//  Created by Rodrigo Bueno Tomiosso on 07/10/13.
 //  Copyright (c) 2013 Rodrigo Bueno Tomiosso. All rights reserved.
 //
 
@@ -11,21 +11,6 @@
 struct jsw_node;
 struct jsw_tree;
 
-/*
-struct jsw_node *make_node ( int data );
-//struct jsw_node *jsw_insert ( struct jsw_node *root, int data );
-int is_red ( struct jsw_node *root );
-struct jsw_node *jsw_single ( struct jsw_node *root, int dir );
-struct jsw_node *jsw_double ( struct jsw_node *root, int dir );
-int jsw_rb_assert ( struct jsw_node *root );
-struct jsw_node *make_node ( int data );
-struct jsw_node *jsw_insert_r ( struct jsw_node *root, int data );
-
-int jsw_insert ( struct jsw_tree *tree, int data );
-
-struct jsw_node *jsw_remove_r ( struct jsw_node *root, int data, int *done );
-struct jsw_node *jsw_remove_balance ( struct jsw_node *root, int dir, int *done );
-*/
 
 
 struct jsw_node {
@@ -49,37 +34,6 @@ struct jsw_node *jsw_remove_balance ( struct jsw_node *root, int dir, int *done 
 int jsw_insert ( struct jsw_tree *tree, int data );
 int jsw_remove ( struct jsw_tree *tree, int data );
 
-
-/* Classic binary search tree insertion
-struct cbt_node *cbt_insert ( struct cbt_node *root, int data )
-{
-    if ( root == NULL )
-        root = make_node ( data );
-    else if ( data < root->data )
-        root->left = cbt_insert ( root->left, data );
-    else
-        root->right = cbt_insert ( root->right, data );
-    
-    return root;
-}
-*/
- 
-/* Julienne Walker's binary search tree insertion */
-
-/*
-struct jsw_node *jsw_insert ( struct jsw_node *root, int data )
-{
-    if ( root == NULL )
-        root = make_node ( data );
-    else {
-        int dir = root->data < data;
-        root->link[dir] = jsw_insert ( root->link[dir], data );
-    }
-    
-    return root;
-}
-
-*/
 
 
 int is_red ( struct jsw_node *root )
@@ -164,30 +118,7 @@ struct jsw_node *make_node ( int data ){
     
     return rn;
 }
-/*
-struct jsw_node *jsw_insert_r ( struct jsw_node *root, int data )
-{
-    if ( root == NULL )
-        root = make_node ( data );
-    else if ( data != root->data ) {
-        int dir = root->data < data;
-        
-        root->link[dir] = jsw_insert_r ( root->link[dir], data );
-        
-        // Hey, let's rebalance here!
-    }
-    
-    return root;
-}
-*/
-/*
-int jsw_insert ( struct jsw_tree *tree, int data )
-{
-    tree->root = jsw_insert_r ( tree->root, data );
-    tree->root->red = 0;
-    return 1;
-}
-*/
+
 
 struct jsw_node *jsw_insert_r ( struct jsw_node *root, int data )
 {
@@ -217,24 +148,6 @@ struct jsw_node *jsw_insert_r ( struct jsw_node *root, int data )
     
     return root;
 }
-/*
-int jsw_insert ( struct jsw_tree *tree, int data )
-{
-    tree->root = jsw_insert_r ( tree->root, data );
-    tree->root->red = 0;
-    return 1;
-    
-}
-*/
-
-
-
-
-
-
-
-
-
 
 
 struct jsw_node *jsw_remove_r ( struct jsw_node *root, int data, int *done )
@@ -281,83 +194,6 @@ struct jsw_node *jsw_remove_r ( struct jsw_node *root, int data, int *done )
     
     return root;
 }
-
-/*
-int jsw_remove ( struct jsw_tree *tree, int data )
-{
-    int done = 0;
-    
-    tree->root = jsw_remove_r ( tree->root, data, &done );
-    if ( tree->root != NULL )
-        tree->root->red = 0;
-    
-    return 1;
-}
-
-
-*/
-
-
-
-
-
-
-
-
-/*
-
-
-struct jsw_node *jsw_remove_balance ( struct jsw_node *root, int dir, int *done )
-{
-    struct jsw_node *p = root;
-    struct jsw_node *s = root->link[!dir];
-    
-    if ( s != NULL && !is_red ( s ) ) {
-        // Black sibling cases
-        if ( !is_red ( s->link[0] ) && !is_red ( s->link[1] ) ) {
-            if ( is_red ( p ) )
-                *done = 1;
-            p->red = 0;
-            s->red = 1;
-        }
-        else {
-            int save = root->red;
-            
-            if ( is_red ( s->link[!dir] ) )
-                p = jsw_single ( p, dir );
-            else
-                p = jsw_double ( p, dir );
-            
-            p->red = save;
-            p->link[0]->red = 0;
-            p->link[1]->red = 0;
-            *done = 1;
-        }
-    }
-    else if ( s->link[dir] != NULL ) {
-        // Red sibling cases
-        struct jsw_node *r = s->link[dir];
-        
-        if ( !is_red ( r->link[0] ) && !is_red ( r->link[1] ) ) {
-            p = jsw_single ( p, dir );
-            p->link[dir]->link[!dir]->red = 1;
-        }
-        else {
-            if ( is_red ( r->link[dir] ) )
-                s->link[dir] = jsw_single ( r, !dir );
-            p = jsw_double ( p, dir );
-            s->link[dir]->red = 0;
-            p->link[!dir]->red = 1;
-        }
-        
-        p->red = 0;
-        p->link[dir]->red = 0;
-        *done = 1;
-    }
-    
-    return p;
-}
-*/
 
 struct jsw_node *jsw_remove_balance ( struct jsw_node *root, int dir, int *done )
 {
@@ -567,8 +403,6 @@ void menu(){
 int main(int argc, const char * argv[])
 {
  
-    //node root = *createNode(NULL, NULL);
-    //initRoot(&root);
     
     struct jsw_tree *root = malloc(sizeof(Jsw_node));
     
@@ -594,6 +428,10 @@ int main(int argc, const char * argv[])
                     
                     break;
                 case 2:
+                    printf("\n Valor a ser removido: ");
+                    scanf("%d", &valor);
+                    
+                    jsw_remove ( root, valor );
                     break;
                 case 3:
                     break;
