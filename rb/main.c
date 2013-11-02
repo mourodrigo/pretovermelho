@@ -7,7 +7,7 @@
 //
 
 #include <stdio.h>
-
+#include <stdlib.h>
 struct jsw_node;
 struct jsw_tree;
 
@@ -153,7 +153,7 @@ int jsw_rb_assert ( struct jsw_node *root )
 
 
 struct jsw_node *make_node ( int data ){
-    struct jsw_node *rn = malloc ( sizeof *rn );
+    struct jsw_node *rn = (struct jsw_node*)malloc ( sizeof *rn);
     
     if ( rn != NULL ) {
         rn->data = data;
