@@ -588,9 +588,10 @@ int main(int argc, const char * argv[])
                 case 1:
       
                     printf("\n Valor a ser inserido: ");
-                    jsw_insert(root, valor);
                     scanf("%d", &valor);
-
+                    jsw_insert(root, valor);
+                    
+                    
                     break;
                 case 2:
                     break;
