@@ -13,6 +13,7 @@
 #define RED 1
 #define ESQUERDA 0
 #define DIREITA 1
+#define NIL -0
 
 struct nodo;
 struct arvore;
@@ -488,23 +489,42 @@ void getStringLevel(struct nodo *pressNode, struct nodo *n, int desired, int cur
 {
     
     
-    if (n)
-    {
+    //if (n)
+    //{
         if (desired == current){
-            struct nodo *aNode = NULL;
-            
-            if (pressNode) {
-                aNode = pressNode;
+            if (n) {
+                struct nodo *aNode = NULL;
                 
-                while (aNode->nodos[ESQUERDA]) {
-                    aNode = aNode->nodos[ESQUERDA];
+                if (pressNode) {
+                    aNode = pressNode;
+                    
+                    while (aNode->nodos[ESQUERDA]) {
+                        aNode = aNode->nodos[ESQUERDA];
+                    }
+                    struct nodo *valueNode = criaNodo(n->valor);
+                    aNode->nodos[ESQUERDA] = valueNode;
+                    
+                }else{
+                    pressNode = criaNodo(n->valor);
                 }
-                struct nodo *valueNode = criaNodo(n->valor);
-                aNode->nodos[ESQUERDA] = valueNode;
-                
+
             }else{
-                pressNode = criaNodo(n->valor);
+                struct nodo *aNode = NULL;
+                
+                if (pressNode) {
+                    aNode = pressNode;
+                    
+                    while (aNode->nodos[ESQUERDA]) {
+                        aNode = aNode->nodos[ESQUERDA];
+                    }
+                    struct nodo *valueNode = criaNodo(NIL);
+                    aNode->nodos[ESQUERDA] = valueNode;
+                    
+                }else{
+                    pressNode = criaNodo(n->valor);
+                }
             }
+            
             
         }else{
             
@@ -512,37 +532,12 @@ void getStringLevel(struct nodo *pressNode, struct nodo *n, int desired, int cur
             getStringLevel(pressNode, n->nodos[DIREITA], desired, current + 1);
         
         }
-    }
+    //}
     
     
     
 }
 
-void printLevelTree(struct nodo *root){
-    struct nodo *printnode = criaNodo(0);
-    getStringLevel(printnode, root, 0, 0);
-    printnode = printnode->nodos[ESQUERDA];
-    char line[30] = "";
-    char *lines = "500";
-
-    struct nodoprint *imprime = criaNodoPrint(lines);
-    printf("%s", imprime->valor);
-    
-    while (printnode) {
-        //printf("-> %d ", printnode->data);
-        char data[80];
-        if (printnode->valor) {
-            sprintf(data, " %d", printnode->valor);
-            //    puts(str);
-            strcat(line, data);
-        }
-        printnode = printnode->nodos[ESQUERDA];
-        
-        
-    }
-    puts(line);
-    
-}
 
 void center_print(const char *s, int width)
 {
@@ -557,6 +552,52 @@ void center_print(const char *s, int width)
         fputs(" ", stdout);
     }
 }
+
+void printLevelTree(struct nodo *root){
+    
+    for (int x = 0; x<10; x++) {
+        struct nodo *printnode = criaNodo(0);
+        
+        getStringLevel(printnode, root, x, 0);
+        if (!printnode->nodos[ESQUERDA]) {
+            break;
+        }
+        printnode = printnode->nodos[ESQUERDA];
+        char line[60] = "";
+        //char *lines = "500";
+        
+        // struct nodoprint *imprime = criaNodoPrint(lines);
+        //printf("%s", imprime->valor);
+        
+        while (printnode) {
+            //printf("-> %d ", printnode->data);
+            char data[80];
+            if (printnode->valor == NIL) {
+                
+                strcat(line, "nil");
+                
+            }else{
+                for (int z = 0; z<=x; z++) {
+                    strcat(line, "  ");
+                }
+                sprintf(data, "%d", printnode->valor);
+                //    puts(str);
+                
+                strcat(line, data);
+                
+            }
+            
+            printnode = printnode->nodos[ESQUERDA];
+            
+            
+        }
+        printf("\n");
+        center_print(line, 60);
+    }
+ 
+    
+}
+
 int main(int argc, const char * argv[])
 {
     
