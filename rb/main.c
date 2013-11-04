@@ -8,109 +8,105 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#define BLACK 0
+#define RED 1
+#define ESQUERDA 0
+#define DIREITA 1
 
-struct jsw_node;
-struct jsw_tree;
+struct nodo;
+struct arvore;
+
+struct nodo {
+    int cor;
+    int valor;
+    struct nodo *nodos[2];
+}Nodo;
+
+struct arvore {
+    struct nodo *raiz;
+}Arvore;
+
+int checaVermelho ( struct nodo *raiz );
+struct nodo *singular ( struct nodo *raiz, int direcao );
+struct nodo *duplo ( struct nodo *raiz, int direcao );
+int verificaPropriedades ( struct nodo *raiz );
+struct nodo *criaNodo ( int valor );
+int verificaArvore(struct nodo *raiz);
+//struct nodo *insereR ( struct nodo *raiz, int valor ); //teletar
+//struct nodo *removeR ( struct nodo *raiz, int valor, int *feito );
+//struct nodo *removeBalanceia ( struct nodo *raiz, int direcao, int *feito );
+int insere ( struct arvore *tree, int valor );
+int remover ( struct arvore *tree, int valor );
 
 
-
-struct jsw_node {
-    int red;
-    int data;
-    struct jsw_node *link[2];
-}Jsw_node;
-
-struct jsw_tree {
-    struct jsw_node *root;
-}Jsw_tree;
-
-int is_red ( struct jsw_node *root );
-struct jsw_node *jsw_single ( struct jsw_node *root, int dir );
-struct jsw_node *jsw_double ( struct jsw_node *root, int dir );
-int jsw_rb_assert ( struct jsw_node *root );
-struct jsw_node *make_node ( int data );
-struct jsw_node *jsw_insert_r ( struct jsw_node *root, int data );
-struct jsw_node *jsw_remove_r ( struct jsw_node *root, int data, int *done );
-struct jsw_node *jsw_remove_balance ( struct jsw_node *root, int dir, int *done );
-int jsw_insert ( struct jsw_tree *tree, int data );
-int jsw_remove ( struct jsw_tree *tree, int data );
-
-
-
-int is_red ( struct jsw_node *root )
-{
-    return root != NULL && root->red == 1;
+int checaVermelho ( struct nodo *raiz ){
+    return raiz != NULL && raiz->cor == RED;
 }
 
-
-
-struct jsw_node *jsw_single ( struct jsw_node *root, int dir ){
-
-struct jsw_node *save = root->link[!dir];
-
-root->link[!dir] = save->link[dir];
-save->link[dir] = root;
-
-root->red = 1;
-save->red = 0;
-
-return save;
-}
-
-struct jsw_node *jsw_double ( struct jsw_node *root, int dir )
-{
-    root->link[!dir] = jsw_single ( root->link[!dir], !dir );
-    return jsw_single ( root, dir );
-}
-
-int jsw_rb_assert ( struct jsw_node *root )
-{
-    int lh, rh;
+struct nodo *singular ( struct nodo *raiz, int direcao ){
     
-    if ( root == NULL )
+    struct nodo *guarda = raiz->nodos[!direcao];
+    
+    raiz->nodos[!direcao] = guarda->nodos[direcao];
+    guarda->nodos[direcao] = raiz;
+    
+    raiz->cor = RED;
+    guarda->cor = BLACK;
+    
+    return guarda;
+}
+
+struct nodo *duplo ( struct nodo *raiz, int direcao ){
+    raiz->nodos[!direcao] = singular ( raiz->nodos[!direcao], !direcao );
+    return singular ( raiz, direcao );
+}
+
+int verificaPropriedades ( struct nodo *raiz ){
+    int alturaEsquerda, alturaDireita;
+    if ( raiz == NULL )
         return 1;
-    else {
-        printf("\nverificando nodo: %d", root->data);
+    else{
+        printf("\nVerificando nodo: %d", raiz->valor);
         
-        struct jsw_node *ln = root->link[0];
-        struct jsw_node *rn = root->link[1];
+        struct nodo *nodoEsquerda = raiz->nodos[ESQUERDA];
+        struct nodo *nodoDireita = raiz->nodos[DIREITA];
         
-        /* Consecutive red links */
-        if ( is_red ( root ) ) {
-            if ( is_red ( ln ) || is_red ( rn ) ) {
-                puts ( "Red violation" );
+        /* Cor consecutiva nos nodos */
+        if ( checaVermelho ( raiz ) ) {
+            if ( checaVermelho ( nodoEsquerda ) || checaVermelho ( nodoDireita ) ) {
+                puts ( "Violacao vermelha" );
                 return 0;
             }
         }
+        alturaEsquerda = verificaPropriedades ( nodoEsquerda );
+        alturaDireita = verificaPropriedades ( nodoDireita );
         
-        lh = jsw_rb_assert ( ln );
-        rh = jsw_rb_assert ( rn );
-        
-        /* Invalid binary search tree */
-        if ( ( ln != NULL && ln->data >= root->data )
-            || ( rn != NULL && rn->data <= root->data ) )
+        /* Arvore de busca binaria irregular */
+        if ( ( nodoEsquerda != NULL && nodoEsquerda->valor >= raiz->valor )
+            || ( nodoDireita != NULL && nodoDireita->valor <= raiz->valor ) )
         {
-            puts ( "Binary tree violation" );
+            puts ( "Violacao de arvore binaria" );
             return 0;
         }
         
-        /* Black height mismatch */
-        if ( lh != 0 && rh != 0 && lh != rh ) {
-            puts ( "Black violation" );
+        /* Verificando altura negra */
+        if ( alturaEsquerda != 0 && alturaDireita != 0 && alturaEsquerda != alturaDireita ) {
+            puts ( "Violacao negra" );
             return 0;
         }
         
-        /* Only count black links */
-        if ( lh != 0 && rh != 0 )
-            return is_red ( root ) ? lh : lh + 1;
+        /* Conta somente os nodos negros */
+        if ( alturaEsquerda != 0 && alturaDireita != 0 )
+            return checaVermelho ( raiz ) ? alturaEsquerda : alturaEsquerda + 1;//if else
         else
             return 0;
     }
 }
 
-int verificaArvore(struct jsw_node *root){
-  
-    if (jsw_rb_assert(root)>0) {
+int verificaArvore(struct nodo *raiz){
+    
+    if (verificaPropriedades(raiz)>0) {
         return 1;
     }else{
         return 0;
@@ -120,331 +116,326 @@ int verificaArvore(struct jsw_node *root){
 
 
 
-struct jsw_node *make_node ( int data ){
-    struct jsw_node *rn = (struct jsw_node*)malloc ( sizeof *rn);
+struct nodo *criaNodo ( int valor ){
+    struct nodo *novoNodo = (struct nodo*)malloc ( sizeof *novoNodo);
     
-    if ( rn != NULL ) {
-        rn->data = data;
-        rn->red = 1; /* 1 is red, 0 is black */
-        rn->link[0] = NULL;
-        rn->link[1] = NULL;
+    if ( novoNodo != NULL ) {
+        novoNodo->valor = valor;
+        novoNodo->cor = RED;
+        novoNodo->nodos[ESQUERDA] = NULL;
+        novoNodo->nodos[DIREITA] = NULL;
     }
     
-    return rn;
+    return novoNodo;
 }
 
-
-struct jsw_node *jsw_insert_r ( struct jsw_node *root, int data )
+/* TELETAR
+struct nodo *insereR ( struct nodo *raiz, int valor )
 {
-    if ( root == NULL )
-        root = make_node ( data );
-    else if ( data != root->data ) {
-        int dir = root->data < data;
+    if ( raiz == NULL )
+        raiz = criaNodo ( valor );
+    else if ( valor != raiz->valor ) {
+        int direcao = raiz->valor < valor;
         
-        root->link[dir] = jsw_insert_r ( root->link[dir], data );
+        raiz->nodos[direcao] = insereR ( raiz->nodos[direcao], valor );
         
-        if ( is_red ( root->link[dir] ) ) {
-            if ( is_red ( root->link[!dir] ) ) {
-                /* Case 1 */
-                root->red = 1;
-                root->link[0]->red = 0;
-                root->link[1]->red = 0;
+        if ( checaVermelho ( raiz->nodos[direcao] ) ) {
+            if ( checaVermelho ( raiz->nodos[!direcao] ) ) {
+                // Case 1
+                raiz->cor = RED;
+                raiz->nodos[ESQUERDA]->cor = BLACK;
+                raiz->nodos[DIREITA]->cor = BLACK;
             }
             else {
-                /* Cases 2 & 3 */
-                if ( is_red ( root->link[dir]->link[dir] ) )
-                    root = jsw_single ( root, !dir );
-                else if ( is_red ( root->link[dir]->link[!dir] ) )
-                    root = jsw_double ( root, !dir );
+                // Cases 2 & 3
+                if ( checaVermelho ( raiz->nodos[direcao]->nodos[direcao] ) )
+                    raiz = singular ( raiz, !direcao );
+                else if ( checaVermelho ( raiz->nodos[direcao]->nodos[!direcao] ) )
+                    raiz = duplo ( raiz, !direcao );
             }
         }
     }
     
-    return root;
+    return raiz;
 }
 
 
-struct jsw_node *jsw_remove_r ( struct jsw_node *root, int data, int *done )
-{
-    if ( root == NULL )
-        *done = 1;
+struct nodo *removeR ( struct nodo *raiz, int valor, int *feito ){
+    if ( raiz == NULL )
+        *feito = 1;
     else {
-        int dir;
+        int direcao;
         
-        if ( root->data == data ) {
-            if ( root->link[0] == NULL || root->link[1] == NULL ) {
-                struct jsw_node *save =
-                root->link[root->link[0] == NULL];
+        if ( raiz->valor == valor ) {
+            if ( raiz->nodos[ESQUERDA] == NULL || raiz->nodos[DIREITA] == NULL ) {
+                struct nodo *guarda =
+                raiz->nodos[raiz->nodos[ESQUERDA] == NULL];
                 
-                /* Case 0 */
-                if ( is_red ( root ) )
-                    *done = 1;
-                else if ( is_red ( save ) ) {
-                    save->red = 0;
-                    *done = 1;
+                // Case 0
+                if ( checaVermelho ( raiz ) )
+                    *feito = 1;
+                else if ( checaVermelho ( guarda ) ) {
+                    guarda->cor = BLACK;
+                    *feito = 1;
                 }
                 
-                free ( root );
+                free ( raiz );
                 
-                return save;
+                return guarda;
             }
             else {
-                struct jsw_node *heir = root->link[0];
+                struct nodo *herdeiro = raiz->nodos[ESQUERDA];
                 
-                while ( heir->link[1] != NULL )
-                    heir = heir->link[1];
+                while ( herdeiro->nodos[DIREITA] != NULL )
+                    herdeiro = herdeiro->nodos[DIREITA];
                 
-                root->data = heir->data;
-                data = heir->data;
+                raiz->valor = herdeiro->valor;
+                valor = herdeiro->valor;
             }
         }
         
-        dir = root->data < data;
-        root->link[dir] = jsw_remove_r ( root->link[dir], data, done );
+        direcao = raiz->valor < valor;
+        raiz->nodos[direcao] = removeR ( raiz->nodos[direcao], valor, feito );
         
-        if ( !*done )
-            root = jsw_remove_balance ( root, dir, done );
+        if ( !*feito )
+            raiz = removeBalanceia ( raiz, direcao, feito );
     }
     
-    return root;
+    return raiz;
 }
 
-struct jsw_node *jsw_remove_balance ( struct jsw_node *root, int dir, int *done )
-{
-    struct jsw_node *p = root;
-    struct jsw_node *s = root->link[!dir];
+
+struct nodo *removeBalanceia ( struct nodo *raiz, int direcao, int *feito ){
+    struct nodo *p = raiz;
+    struct nodo *s = raiz->nodos[!direcao];
     
-    /* Case reduction, remove red sibling */
-    if ( is_red ( s ) ) {
-        root = jsw_single ( root, dir );
-        s = p->link[!dir];
+    // Case coruction, remover cor sibling
+    if ( checaVermelho ( s ) ) {
+        raiz = singular ( raiz, direcao );
+        s = p->nodos[!direcao];
     }
     
     if ( s != NULL ) {
-        if ( !is_red ( s->link[0] ) && !is_red ( s->link[1] ) ) {
-            if ( is_red ( p ) )
-                *done = 1;
-            p->red = 0;
-            s->red = 1;
+        if ( !checaVermelho ( s->nodos[ESQUERDA] ) && !checaVermelho ( s->nodos[DIREITA] ) ) {
+            if ( checaVermelho ( p ) )
+                *feito = 1;
+            p->cor = BLACK;
+            s->cor = RED;
         }
         else {
-            int save = p->red;
-            int new_root = ( root == p );
+            int guarda = p->cor;
+            int new_raiz = ( raiz == p );
             
-            if ( is_red ( s->link[!dir] ) )
-                p = jsw_single ( p, dir );
+            if ( checaVermelho ( s->nodos[!direcao] ) )
+                p = singular ( p, direcao );
             else
-                p = jsw_double ( p, dir );
+                p = duplo ( p, direcao );
             
-            p->red = save;
-            p->link[0]->red = 0;
-            p->link[1]->red = 0;
+            p->cor = guarda;
+            p->nodos[ESQUERDA]->cor = BLACK;
+            p->nodos[DIREITA]->cor = BLACK;
             
-            if ( new_root )
-                root = p;
+            if ( new_raiz )
+                raiz = p;
             else
-                root->link[dir] = p;
+                raiz->nodos[direcao] = p;
             
-            *done = 1;
+            *feito = 1;
         }
     }
     
-    return root;
+    return raiz;
 }
 
+*/
 
-
-int jsw_insert ( struct jsw_tree *tree, int data )
-{
-    if ( tree->root == NULL ) {
+int insere ( struct arvore *tree, int valor ){
+    if ( tree->raiz == NULL ) {
         /* Empty tree case */
-        tree->root = make_node ( data );
-        if ( tree->root == NULL )
+        tree->raiz = criaNodo ( valor );
+        if ( tree->raiz == NULL )
             return 0;
     }
     else {
-        struct jsw_node head = {0}; /* False tree root */
+        struct nodo head = {0}; /* False tree raiz */
         
-        struct jsw_node *g, *t;     /* Grandparent & parent */
-        struct jsw_node *p, *q;     /* Iterator & parent */
-        int dir = 0, last;
+        struct nodo *g, *t;     /* Grandparent & parent */
+        struct nodo *p, *q;     /* Iterator & parent */
+        int direcao = 0, ultimo;
         
         /* Set up helpers */
         t = &head;
         g = p = NULL;
-        q = t->link[1] = tree->root;
+        q = t->nodos[DIREITA] = tree->raiz;
         
         /* Search down the tree */
         for ( ; ; ) {
             if ( q == NULL ) {
                 /* Insert new node at the bottom */
-                p->link[dir] = q = make_node ( data );
+                p->nodos[direcao] = q = criaNodo ( valor );
                 if ( q == NULL )
                     return 0;
             }
-            else if ( is_red ( q->link[0] ) && is_red ( q->link[1] ) ) {
+            else if ( checaVermelho ( q->nodos[ESQUERDA] ) && checaVermelho ( q->nodos[DIREITA] ) ) {
                 /* Color flip */
-                q->red = 1;
-                q->link[0]->red = 0;
-                q->link[1]->red = 0;
+                q->cor = RED;
+                q->nodos[ESQUERDA]->cor = BLACK;
+                q->nodos[DIREITA]->cor = BLACK;
             }
             
-            /* Fix red violation */
-            if ( is_red ( q ) && is_red ( p ) ) {
-                int dir2 = t->link[1] == g;
+            /* Fix cor violation */
+            if ( checaVermelho ( q ) && checaVermelho ( p ) ) {
+                int direcao2 = t->nodos[DIREITA] == g;
                 
-                if ( q == p->link[last] )
-                    t->link[dir2] = jsw_single ( g, !last );
+                if ( q == p->nodos[ultimo] )
+                    t->nodos[direcao2] = singular ( g, !ultimo );
                 else
-                    t->link[dir2] = jsw_double ( g, !last );
+                    t->nodos[direcao2] = duplo ( g, !ultimo );
             }
             
             /* Stop if found */
-            if ( q->data == data )
+            if ( q->valor == valor )
                 break;
             
-            last = dir;
-            dir = q->data < data;
+            ultimo = direcao;
+            direcao = q->valor < valor;
             
             /* Update helpers */
             if ( g != NULL )
                 t = g;
             g = p, p = q;
-            q = q->link[dir];
+            q = q->nodos[direcao];
         }
         
-        /* Update root */
-        tree->root = head.link[1];
+        /* Update raiz */
+        tree->raiz = head.nodos[DIREITA];
     }
     
-    /* Make root black */
-    tree->root->red = 0;
+    /* Make raiz black */
+    tree->raiz->cor = BLACK;
     
     return 1;
 }
 
 
-int jsw_remove ( struct jsw_tree *tree, int data )
-{
-    if ( tree->root != NULL ) {
-        struct jsw_node head = {0}; /* False tree root */
-        struct jsw_node *q, *p, *g; /* Helpers */
-        struct jsw_node *f = NULL;  /* Found item */
-        int dir = 1;
+int remover ( struct arvore *tree, int valor ){
+    if ( tree->raiz != NULL ) {
+        struct nodo head = {0}; /* False tree raiz */
+        struct nodo *q, *p, *g; /* Helpers */
+        struct nodo *f = NULL;  /* Found item */
+        int direcao = 1;
         
         /* Set up helpers */
         q = &head;
         g = p = NULL;
-        q->link[1] = tree->root;
+        q->nodos[DIREITA] = tree->raiz;
         
-        /* Search and push a red down */
-        while ( q->link[dir] != NULL ) {
-            int last = dir;
+        /* Search and push a cor down */
+        while ( q->nodos[direcao] != NULL ) {
+            int ultimo = direcao;
             
             /* Update helpers */
             g = p, p = q;
-            q = q->link[dir];
-            dir = q->data < data;
+            q = q->nodos[direcao];
+            direcao = q->valor < valor;
             
             /* Save found node */
-            if ( q->data == data )
+            if ( q->valor == valor )
                 f = q;
             
-            /* Push the red node down */
-            if ( !is_red ( q ) && !is_red ( q->link[dir] ) ) {
-                if ( is_red ( q->link[!dir] ) )
-                    p = p->link[last] = jsw_single ( q, dir );
-                else if ( !is_red ( q->link[!dir] ) ) {
-                    struct jsw_node *s = p->link[!last];
+            /* Push the cor node down */
+            if ( !checaVermelho ( q ) && !checaVermelho ( q->nodos[direcao] ) ) {
+                if ( checaVermelho ( q->nodos[!direcao] ) )
+                    p = p->nodos[ultimo] = singular ( q, direcao );
+                else if ( !checaVermelho ( q->nodos[!direcao] ) ) {
+                    struct nodo *s = p->nodos[!ultimo];
                     
                     if ( s != NULL ) {
-                        if ( !is_red ( s->link[!last] ) && !is_red ( s->link[last] ) ) {
+                        if ( !checaVermelho ( s->nodos[!ultimo] ) && !checaVermelho ( s->nodos[ultimo] ) ) {
                             /* Color flip */
-                            p->red = 0;
-                            s->red = 1;
-                            q->red = 1;
+                            p->cor = BLACK;
+                            s->cor = RED;
+                            q->cor = RED;
                         }
                         else {
-                            int dir2 = g->link[1] == p;
+                            int direcao2 = g->nodos[DIREITA] == p;
                             
-                            if ( is_red ( s->link[last] ) )
-                                g->link[dir2] = jsw_double ( p, last );
-                            else if ( is_red ( s->link[!last] ) )
-                                g->link[dir2] = jsw_single ( p, last );
+                            if ( checaVermelho ( s->nodos[ultimo] ) )
+                                g->nodos[direcao2] = duplo ( p, ultimo );
+                            else if ( checaVermelho ( s->nodos[!ultimo] ) )
+                                g->nodos[direcao2] = singular ( p, ultimo );
                             
                             /* Ensure correct coloring */
-                            q->red = g->link[dir2]->red = 1;
-                            g->link[dir2]->link[0]->red = 0;
-                            g->link[dir2]->link[1]->red = 0;
+                            q->cor = g->nodos[direcao2]->cor = RED;
+                            g->nodos[direcao2]->nodos[ESQUERDA]->cor = BLACK;
+                            g->nodos[direcao2]->nodos[DIREITA]->cor = BLACK;
                         }
                     }
                 }
             }
         }
         
-        /* Replace and remove if found */
+        /* Replace and remover if found */
         if ( f != NULL ) {
-            f->data = q->data;
-            p->link[p->link[1] == q] =
-            q->link[q->link[0] == NULL];
+            f->valor = q->valor;
+            p->nodos[p->nodos[DIREITA] == q] =
+            q->nodos[q->nodos[ESQUERDA] == NULL];
             free ( q );
         }
         
-        /* Update root and make it black */
-        tree->root = head.link[1];
-        if ( tree->root != NULL )
-            tree->root->red = 0;
+        /* Update raiz and make it black */
+        tree->raiz = head.nodos[DIREITA];
+        if ( tree->raiz != NULL )
+            tree->raiz->cor = BLACK;
     }
     
     return 1;
 }
 
-struct jsw_node *search_node(int searchValue, struct jsw_node *t){
-	
+struct nodo *search_node(int valorBusca, struct nodo *t){
+    
 	if (t == NULL){
 		return NULL;
 	}else{
-		if(t->data == searchValue){
+		if(t->valor == valorBusca){
 			return t;
 		}else{
-			struct jsw_node *found;
-			found = search_node(searchValue,t->link[0]);
+			struct nodo *found;
+			found = search_node(valorBusca,t->nodos[ESQUERDA]);
             if(found == NULL){
-                found = search_node(searchValue,t->link[1]);
+                found = search_node(valorBusca,t->nodos[DIREITA]);
             }
         }
     }
     return NULL;
 }
 
-void Tree_inOrder(struct jsw_node *n) /*see declaration of TNode below*/
-
-{
+void Tree_inOrder(struct nodo *n){
     
     if(n==0)
         
         return;
     
-    Tree_inOrder(n->link[0]);
+    Tree_inOrder(n->nodos[ESQUERDA]);
     
-    printf("%d ", n->data);
+    printf("%d ", n->valor);
     
-    Tree_inOrder(n->link[1]);
+    Tree_inOrder(n->nodos[DIREITA]);
     
 }
 
 
-void print_at_level_recursive(struct jsw_node *n, int desired, int current)
+void print_at_level_recursive(struct nodo *n, int desejado, int atual)
 {
     
     if (n)
     {
-        if (desired == current)
-            printf("%d ", n->data);
+        if (desejado == atual)
+            printf("%d ", n->valor);
         else
         {
-            print_at_level_recursive(n->link[0], desired, current + 1);
-            print_at_level_recursive(n->link[1], desired, current + 1);
+            print_at_level_recursive(n->nodos[ESQUERDA], desejado, atual + 1);
+            print_at_level_recursive(n->nodos[DIREITA], desejado, atual + 1);
         }
     }
 }
@@ -465,7 +456,7 @@ void menu(){
     
 }
 
-int verificaNodo(struct jsw_node *n){
+int verificaNodo(struct nodo *n){
     if (n) {
         return 1;
     }else{
@@ -473,13 +464,28 @@ int verificaNodo(struct jsw_node *n){
     }
 }
 
+
+void center_print(const char *s, int width)
+{
+    int length = strlen(s);
+    int i;
+    for (i=0; i<=(width-length)/2; i++) {
+        fputs(" ", stdout);
+    }
+    fputs(s, stdout);
+    i += length;
+    for (; i<=width; i++) {
+        fputs(" ", stdout);
+    }
+}
 int main(int argc, const char * argv[])
 {
- 
     
-    struct jsw_tree *root = malloc(sizeof(Jsw_node));
     
-                                          
+    struct arvore *raiz = malloc(sizeof(Nodo));
+    
+    int numero = 2;
+    
     
     int valor = 0;
     
@@ -488,15 +494,15 @@ int main(int argc, const char * argv[])
         
         menu();
         scanf("%d", &opcao);
-
+        
         
         if (opcao!=8) {
             switch (opcao) {
                 case 1:
-      
+                    
                     printf("\n Valor a ser inserido: ");
                     scanf("%d", &valor);
-                    jsw_insert(root, valor);
+                    insere(raiz, valor);
                     
                     
                     break;
@@ -504,21 +510,21 @@ int main(int argc, const char * argv[])
                     printf("\n Valor a ser removido: ");
                     scanf("%d", &valor);
                     
-                    jsw_remove ( root, valor );
+                    remover ( raiz, valor );
                     break;
                 case 3:
-                    Tree_inOrder(root->root);
+                    Tree_inOrder(raiz->raiz);
                     break;
                 case 4:
                     printf("\n Nivel a ser impresso: ");
                     scanf("%d", &valor);
-                    print_at_level_recursive(root->root, valor, 0);
+                    print_at_level_recursive(raiz->raiz, valor, 0);
                     break;
                 case 5:
                     printf("\n Valor à ser procurado: ");
                     scanf("%d", &valor);
                     
-                    if(verificaNodo(search_node(valor, root->root))){
+                    if(verificaNodo(search_node(valor, raiz->raiz))){
                         printf("TRUE");
                     }else{
                         printf("FALSE");
@@ -526,14 +532,16 @@ int main(int argc, const char * argv[])
                     
                     break;
                 case 6:
-                    if(verificaArvore(root->root)){
+                    if(verificaArvore(raiz->raiz)){
                         printf("TRUE");
                     }else{
                         printf("FALSE");
                     }
                     break;
                 case 7:
-                    
+                    printf("\n Largura ");
+                    scanf("%d", &valor);
+                    center_print("mouro", valor);
                     break;
                 default:
                     break;
