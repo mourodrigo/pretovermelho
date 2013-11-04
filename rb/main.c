@@ -23,6 +23,11 @@ struct nodo {
     struct nodo *nodos[2];
 }Nodo;
 
+struct nodoprint {
+    char *valor;
+    struct nodo *nodos[1];
+}NodoPrint;
+
 struct arvore {
     struct nodo *raiz;
 }Arvore;
@@ -124,6 +129,21 @@ struct nodo *criaNodo ( int valor ){
         novoNodo->cor = RED;
         novoNodo->nodos[ESQUERDA] = NULL;
         novoNodo->nodos[DIREITA] = NULL;
+    }
+    
+    return novoNodo;
+}
+
+struct nodoprint *criaNodoPrint ( char *valor ){
+
+    struct nodoprint *novoNodo = (struct nodoprint*)malloc ( sizeof *novoNodo);
+    
+    if ( novoNodo != NULL ) {
+        
+        
+        novoNodo->valor = valor;
+        
+        novoNodo->nodos[ESQUERDA] = NULL;
     }
     
     return novoNodo;
@@ -503,6 +523,10 @@ void printLevelTree(struct nodo *root){
     getStringLevel(printnode, root, 0, 0);
     printnode = printnode->nodos[ESQUERDA];
     char line[30] = "";
+    char *lines = "500";
+
+    struct nodoprint *imprime = criaNodoPrint(lines);
+    printf("%s", imprime->valor);
     
     while (printnode) {
         //printf("-> %d ", printnode->data);
@@ -594,9 +618,12 @@ int main(int argc, const char * argv[])
                     }
                     break;
                 case 7:
-                    printf("\n Largura ");
+                 /*   printf("\n Largura ");
                     scanf("%d", &valor);
                     center_print("mouro", valor);
+                   
+                  */
+                    printLevelTree(raiz->raiz);
                     break;
                 default:
                     break;
