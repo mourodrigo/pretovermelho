@@ -464,6 +464,61 @@ int verificaNodo(struct nodo *n){
     }
 }
 
+void getStringLevel(struct nodo *pressNode, struct nodo *n, int desired, int current)
+{
+    
+    
+    if (n)
+    {
+        if (desired == current){
+            struct nodo *aNode = NULL;
+            
+            if (pressNode) {
+                aNode = pressNode;
+                
+                while (aNode->nodos[ESQUERDA]) {
+                    aNode = aNode->nodos[ESQUERDA];
+                }
+                struct nodo *valueNode = criaNodo(n->valor);
+                aNode->nodos[ESQUERDA] = valueNode;
+                
+            }else{
+                pressNode = criaNodo(n->valor);
+            }
+            
+        }else{
+            
+            getStringLevel(pressNode, n->nodos[ESQUERDA], desired, current + 1);
+            getStringLevel(pressNode, n->nodos[DIREITA], desired, current + 1);
+        
+        }
+    }
+    
+    
+    
+}
+
+void printLevelTree(struct nodo *root){
+    struct nodo *printnode = criaNodo(0);
+    getStringLevel(printnode, root, 0, 0);
+    printnode = printnode->nodos[ESQUERDA];
+    char line[30] = "";
+    
+    while (printnode) {
+        //printf("-> %d ", printnode->data);
+        char data[80];
+        if (printnode->valor) {
+            sprintf(data, " %d", printnode->valor);
+            //    puts(str);
+            strcat(line, data);
+        }
+        printnode = printnode->nodos[ESQUERDA];
+        
+        
+    }
+    puts(line);
+    
+}
 
 void center_print(const char *s, int width)
 {
@@ -484,7 +539,7 @@ int main(int argc, const char * argv[])
     
     struct arvore *raiz = malloc(sizeof(Nodo));
     
-    int numero = 2;
+ //   int numero = 2;
     
     
     int valor = 0;
