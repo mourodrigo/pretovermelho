@@ -469,6 +469,7 @@ void Tree_inOrder(struct nodo *n, FILE *outputFile){
         char puts[30] = "";
         strtol(puts, (char **)NULL, n->valor);
  //       printf("puts[%s][%d]", puts, n->valor);
+      
         sprintf(puts, "%d ",n->valor);
         fputs(puts, outputFile);
         printf(" %s", puts);
@@ -800,7 +801,7 @@ int main(int argc, const char * argv[])
         {
             char *x;
             char *path = (char*)argv[1];
-            FILE *output = fopen(strcat(strtok(path, "."), ".expected"), "a" );
+            FILE *output = fopen(strcat(strtok(path, "."), ".expected"), "w+" );
             if (debug) printf("\n\noutput: %s \n\n",strcat(strtok(path, "."), ".output"));
             
             if (input) {
@@ -839,10 +840,10 @@ int main(int argc, const char * argv[])
                             if (debug) printf("line %d || search %d ||",inputline, atoi(valor));
                             if(verificaNodo(search_node(atoi(valor), raiz->raiz))){
                                 if (debug) printf(" outputline %d || TRUE", outputline);
-                                fputs("true \n", output);
+                                fputs("true\n", output);
                                 
                             }else{
-                                fputs("false \n", output);
+                                fputs("false\n", output);
 
                                 if (debug) printf(" outputline %d || FALSE ", outputline);
                             }
@@ -878,11 +879,15 @@ int main(int argc, const char * argv[])
                         outputline++;
                         if (debug) printf("line %d || inorder", inputline);
                         Tree_inOrder(raiz->raiz, output);
+                        printf("tell %ld", ftell(output));
+                        fseek(output, -sizeof(char), SEEK_CUR);
+                        printf("tell %ld", ftell(output));
+                        
                         fputs("\n", output);
                         printf(" || outputline %d", outputline);
                         if (debug) printf("\n");
-                    
-                    
+                        
+                        
                     
                     }
                     printf("\n");
