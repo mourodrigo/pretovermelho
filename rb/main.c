@@ -463,10 +463,12 @@ void Tree_inOrder(struct nodo *n, FILE *outputFile){
     }
     Tree_inOrder(n->nodos[ESQUERDA], outputFile);
     if (outputFile) {
-        char *puts = "";
+        char puts[30] = "";
         strtol(puts, (char **)NULL, n->valor);
-//        sprintf(puts, "%d",n->valor);
+ //       printf("puts[%s][%d]", puts, n->valor);
+        sprintf(puts, "%d ",n->valor);
         fputs(puts, outputFile);
+        //printf(" %s", puts);
     }else{
         printf("%d ", n->valor);
     }
@@ -759,6 +761,7 @@ static char *fgetline(FILE *f)
 
 int main(int argc, const char * argv[])
 {
+    int debug = 1;
     
     struct arvore *raiz = malloc(sizeof(Nodo));
 
@@ -783,19 +786,19 @@ int main(int argc, const char * argv[])
     
         // argv[1] deve ser o nome do arquivo à ser aberto
         FILE *input = fopen( argv[1], "r" );
-        printf("Abrindo arquivo -> %s ", argv[1]);
+        if (debug) printf("Abrindo arquivo -> %s ", argv[1]);
         /* fopen retorna 0 se houve algum erro. */
         if ( input == 0 )
         {
-            printf("\n\nNão foi possível abrir o arquivo, executando modo interface.\n\n");
+            if (debug) printf("\n\nNão foi possível abrir o arquivo, executando modo interface.\n\n");
             modoInterface(raiz);
         }
         else
         {
             char *x;
             char *path = (char*)argv[1];
-            FILE *output = fopen(strcat(strtok(path, "."), ".output"), "a" );
-            printf("\n\noutput: %s \n\n",strcat(strtok(path, "."), ".output"));
+            FILE *output = fopen(strcat(strtok(path, "."), ".expected"), "a" );
+            if (debug) printf("\n\noutput: %s \n\n",strcat(strtok(path, "."), ".output"));
             
             if (input) {
                 while  ( ( x = fgetline(input) ))
@@ -804,54 +807,92 @@ int main(int argc, const char * argv[])
                     char *explode = " ";
                     funcao = strtok(x, explode);
                     valor = strtok(NULL, explode);
+                    
+                    
+                    
                     if (strcmp(funcao, "insert")==0) {
                         if (valor) {
+                            if (debug) printf("insert %d \n", atoi(valor));
                             insere(raiz, atoi(valor));
                         }else{
-                            printf("valor invalido");
+                            if (debug) printf("valor invalido");
                         }
-                    }else if (strcmp(funcao, "search")==0) {
+                    
+                    
+                    
+                    
+                    }
+                    
+                    
+                    else if (strcmp(funcao, "search")==0) {
                         if (valor) {
+                            if (debug) printf("search %d", atoi(valor));
                             if(verificaNodo(search_node(atoi(valor), raiz->raiz))){
-                                //printf("TRUE");
+                                if (debug) printf("TRUE");
                                 fputs("TRUE \n", output);
                                 
                             }else{
                                 fputs("FALSE \n", output);
 
-                                //printf("FALSE ");
+                                if (debug) printf("FALSE ");
                             }
-                          //  printf("\n");
+                            if (debug) printf("\n");
                         }else{
-                            printf("valor invalido");
+                            if (debug) printf("valor invalido");
                         }
-                    }else if (strcmp(funcao, "delete")==0) {
+                    
+                    
+                    
+                    
+                    }
+                    
+                    
+                    
+                    else if (strcmp(funcao, "delete")==0) {
                         if (valor) {
+                            if (debug) printf("delete %d \n", atoi(valor));
+                            
                             remover(raiz, atoi(valor));
                         }else{
-                            printf("valor invalido");
+                            if (debug) printf("valor invalido");
                         }
-                    }else if (strcmp(x, "inorder\n")==0) {
-                        Tree_inOrder(raiz->raiz, output);
-                        //printf("\n");
+                    
+                    
+                    
                     }
+                    
+                    
+                    
+                    
+                    else if (strcmp(x, "inorder\n")==0) {
+                        if (debug) printf("inorder");
+                        Tree_inOrder(raiz->raiz, output);
+                        fputs("\n", output);
+                        if (debug) printf("\n");
+                    
+                    
+                    
+                    }
+                
                 }
                 fclose(input);
                 fclose(output);
             }
         }
+    
+        if (debug) printf("\n\n-----------------\n");
+        if (debug) printf("\n\n-----------------\n");
+        if (debug) printf("\n\nLeitura ok, enter para modo interface\n");
+        
+        
+        getchar();
+        getchar();
+        
+        modoInterface(raiz);
+    
     }
     
     
-    printf("\n\n-----------------\n");
-    printf("\n\n-----------------\n");
-    printf("\n\nLeitura ok, enter para modo interface\n");
-    
-    
-    getchar();
-    getchar();
-    
-    modoInterface(raiz);
     
     
     
