@@ -443,15 +443,18 @@ struct nodo *search_node(int valorBusca, struct nodo *t){
 	if (t == NULL){
 		return NULL;
 	}else{
-		if(t->valor == valorBusca){
+        struct nodo *found;
+        
+        if(t->valor == valorBusca){
 			return t;
 		}else{
-			struct nodo *found;
+		//	struct nodo *found;
 			found = search_node(valorBusca,t->nodos[ESQUERDA]);
             if(found == NULL){
                 found = search_node(valorBusca,t->nodos[DIREITA]);
             }
         }
+        return found;
     }
     return NULL;
 }
@@ -468,7 +471,7 @@ void Tree_inOrder(struct nodo *n, FILE *outputFile){
  //       printf("puts[%s][%d]", puts, n->valor);
         sprintf(puts, "%d ",n->valor);
         fputs(puts, outputFile);
-        //printf(" %s", puts);
+        printf(" %s", puts);
     }else{
         printf("%d ", n->valor);
     }
@@ -801,18 +804,24 @@ int main(int argc, const char * argv[])
             if (debug) printf("\n\noutput: %s \n\n",strcat(strtok(path, "."), ".output"));
             
             if (input) {
+                int inputline = 0;
+                int outputline = 0;
                 while  ( ( x = fgetline(input) ))
                 {
+                    inputline++;
                     char *funcao, *valor;
                     char *explode = " ";
                     funcao = strtok(x, explode);
                     valor = strtok(NULL, explode);
                     
                     
+                    if (inputline==994) {
+                        
+                    }
                     
                     if (strcmp(funcao, "insert")==0) {
                         if (valor) {
-                            if (debug) printf("insert %d \n", atoi(valor));
+                            if (debug) printf("line %d || insert %d \n",inputline, atoi(valor));
                             insere(raiz, atoi(valor));
                         }else{
                             if (debug) printf("valor invalido");
@@ -826,15 +835,16 @@ int main(int argc, const char * argv[])
                     
                     else if (strcmp(funcao, "search")==0) {
                         if (valor) {
-                            if (debug) printf("search %d", atoi(valor));
+                            outputline++;
+                            if (debug) printf("line %d || search %d ||",inputline, atoi(valor));
                             if(verificaNodo(search_node(atoi(valor), raiz->raiz))){
-                                if (debug) printf("TRUE");
-                                fputs("TRUE \n", output);
+                                if (debug) printf(" outputline %d || TRUE", outputline);
+                                fputs("true \n", output);
                                 
                             }else{
-                                fputs("FALSE \n", output);
+                                fputs("false \n", output);
 
-                                if (debug) printf("FALSE ");
+                                if (debug) printf(" outputline %d || FALSE ", outputline);
                             }
                             if (debug) printf("\n");
                         }else{
@@ -850,7 +860,7 @@ int main(int argc, const char * argv[])
                     
                     else if (strcmp(funcao, "delete")==0) {
                         if (valor) {
-                            if (debug) printf("delete %d \n", atoi(valor));
+                            if (debug) printf("line %d || delete %d \n",inputline, atoi(valor));
                             
                             remover(raiz, atoi(valor));
                         }else{
@@ -865,15 +875,17 @@ int main(int argc, const char * argv[])
                     
                     
                     else if (strcmp(x, "inorder\n")==0) {
-                        if (debug) printf("inorder");
+                        outputline++;
+                        if (debug) printf("line %d || inorder", inputline);
                         Tree_inOrder(raiz->raiz, output);
                         fputs("\n", output);
+                        printf(" || outputline %d", outputline);
                         if (debug) printf("\n");
                     
                     
                     
                     }
-                
+                    printf("\n");
                 }
                 fclose(input);
                 fclose(output);
