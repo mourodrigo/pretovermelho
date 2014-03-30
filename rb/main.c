@@ -2,40 +2,18 @@
 //  main.c
 //  rb
 //
-//  Created by Rodrigo Bueno Tomiosso on 07/10/13.
-//  Copyright (c) 2013 Rodrigo Bueno Tomiosso. All rights reserved.
+//  Created by Rodrigo Bueno Tomiosso & Andrey Baumhardt Ramos on 17/09/13.
 //
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/*
-#include <stdlib.h>
-#include <string.h>
-#include <fstream.h>
-#include <ostream>
-#include <vector>
-#include <sstream>
-#include <utility>
-#include <dirent.h>
 #include <limits.h>
-#include <unistd.h>
-#include <stdio.h>
-#ifdef WIN32 //|| _WIN32
-#include <direct.h>
-#define MKDIR(a) _mkdir(a)
-#else
-#include <sys/stat.h>
-#define MKDIR(a) mkdir(a, 0777)  Aqui o 0777 define o modo como igual ao umask, ou seja as permissões que resultariam de um mkdir na shell
-#endif
-*/
 
 #define PRETO 0
 #define VERMELHO 1
 #define ESQUERDA 0
 #define DIREITA 1
-#define NIL -0
 
 struct nodo;
 struct arvore;
@@ -46,66 +24,64 @@ struct nodo {
     struct nodo *nodos[2];
 }Nodo;
 
-struct nodoprint {
-    char *valor;
-    struct nodo *nodos[1];
-}NodoPrint;
-
 struct arvore {
     struct nodo *raiz;
 }Arvore;
 
 int checaVermelho ( struct nodo *raiz );
-struct nodo *singular ( struct nodo *raiz, int direcao );
-struct nodo *duplo ( struct nodo *raiz, int direcao );
+struct nodo *trocaSingular ( struct nodo *raiz, int direcao );
+struct nodo *trocaDupla ( struct nodo *raiz, int direcao );
 int verificaPropriedades ( struct nodo *raiz );
 struct nodo *criaNodo ( int valor );
 int verificaArvore(struct nodo *raiz);
-//struct nodo *insereR ( struct nodo *raiz, int valor ); //teletar
-//struct nodo *removeR ( struct nodo *raiz, int valor, int *feito );
-//struct nodo *removeBalanceia ( struct nodo *raiz, int direcao, int *feito );
-int insere ( struct arvore *tree, int valor );
-int remover ( struct arvore *tree, int valor );
-
+int insere ( struct arvore *arvre, int valor );
+int remover ( struct arvore *arvre, int valor );
 
 int checaVermelho ( struct nodo *raiz ){
-    if (raiz != NULL && raiz->cor == VERMELHO) {
+    //Se o nodo recebido n„o for NULL e a cor for VERMELHO retorna 1, caso contr·rio retorna 0
+    if (raiz != NULL && raiz->cor == VERMELHO){
         return 1;
     }else{
         return 0;
     }
- //   return raiz != NULL && raiz->cor == VERMELHO; //teletar
 }
 
-struct nodo *singular ( struct nodo *raiz, int direcao ){
-    
+struct nodo *trocaSingular ( struct nodo *raiz, int direcao ){
+    //Caso receba 0, a vari·vel guarda recebe o endereÁo de memÛria do filho da DIREITA do nodo
+    //Se receber 1 no par‚metro direÁ„o ent„o guarda recebe o filho da ESQUERDA do nodo
     struct nodo *guarda = raiz->nodos[!direcao];
-    
+    //Caso direÁ„o seja 0: O nodo da DIREITA aponta para o endereÁo de memÛria do seu filho da ESQUERDA
+    //Caso direÁ„o seja 1: O nodo da ESQUERDA aponta para o endereÁo de memÛria do seu filho da DIREITA
     raiz->nodos[!direcao] = guarda->nodos[direcao];
+    //Caso direÁ„o seja 0: O nodo da ESQUERDA do nodo recebido aponta para o endereÁo de memÛria do prÛprio pai
+    //Caso direÁ„o seja 1: O nodo da DIREITA do nodo recebido aponta para o endereÁo de memÛria do prÛprio pai
     guarda->nodos[direcao] = raiz;
     
+    //Troca a cor do NODO recebido para VERMELHO e a cor do filho salvo em guarda para PRETO
     raiz->cor = VERMELHO;
     guarda->cor = PRETO;
     
     return guarda;
 }
 
-struct nodo *duplo ( struct nodo *raiz, int direcao ){
-    raiz->nodos[!direcao] = singular ( raiz->nodos[!direcao], !direcao );
-    return singular ( raiz, direcao );
+struct nodo *trocaDupla ( struct nodo *raiz, int direcao ){
+	//S„o duas trocas singulares, funciona como a troca singular.
+	// O nodo oposto a direÁ„o recebida recebe a primeira troca e a funÁ„o retorna a segudna troca
+    raiz->nodos[!direcao] = trocaSingular ( raiz->nodos[!direcao], !direcao );
+    return trocaSingular ( raiz, direcao );
 }
 
 int verificaPropriedades ( struct nodo *raiz ){
     int alturaEsquerda, alturaDireita;
-    if ( raiz == NULL ){
+    if( raiz == NULL ){
         return 1;
     }else{
-        printf("\nVerificando nodo: %d", raiz->valor);
+        printf("\nVerificando propriedade do nodo: %d", raiz->valor);
         
         struct nodo *nodoEsquerda = raiz->nodos[ESQUERDA];
         struct nodo *nodoDireita = raiz->nodos[DIREITA];
         
-        /* Cor consecutiva nos nodos */
+        //Checa se o pai e os dois filhos s„o vermelhos
         if ( checaVermelho ( raiz ) ) {
             if ( checaVermelho ( nodoEsquerda ) || checaVermelho ( nodoDireita ) ) {
                 printf ( "Violacao vermelha" );
@@ -115,21 +91,29 @@ int verificaPropriedades ( struct nodo *raiz ){
         alturaEsquerda = verificaPropriedades ( nodoEsquerda );
         alturaDireita = verificaPropriedades ( nodoDireita );
         
-        /* Arvore de busca binaria irregular */
+        //Checa se o valor do filho da esquerda È menor que o do pai
+        //e se o valor do filho da direita È maior que o pai
         if ( ( nodoEsquerda != NULL && nodoEsquerda->valor >= raiz->valor )
             || ( nodoDireita != NULL && nodoDireita->valor <= raiz->valor ) ){
             printf ( "Violacao de arvore binaria" );
             return 0;
         }
         
-        /* Verificando altura negra */
+        //Se a altura a direita e a esquerda foram diferente de ZERO e DIFERENTES de si mesmas
+        //a altura negra È violada
         if ( alturaEsquerda != 0 && alturaDireita != 0 && alturaEsquerda != alturaDireita ) {
             printf ( "Violacao negra" );
             return 0;
         }
         
-        /* Conta somente os nodos negros */
+        //If que conta os nodos negros se ambas alturas forem diferentes de ZERO
         if ( alturaEsquerda != 0 && alturaDireita != 0 ){
+			//Se checaVermelho(raiz) retorna 1 ent„o o nodo È vermelho e n„o conta para a altura negra
+			//logo o return ir· retornar o prÛprio valor da alturaEsquerda
+			//Se o checaVermelho(raiz) retorna 0 ent„o o nodo È preto e logo dever· ser adicionado
+			//na contagem da altura preta, ent„o returna ir· retornar alturaEsquerda + 1
+			//alturaEsquerda tem o mesmo valor de alturaDireita neste ponto da funÁ„o
+			//tendo em vista que se forem diferentes ocorre uma violaÁ„o negra
             return checaVermelho ( raiz ) ? alturaEsquerda : alturaEsquerda + 1;
         }else{
             return 0;
@@ -138,280 +122,142 @@ int verificaPropriedades ( struct nodo *raiz ){
 }
 
 int verificaArvore(struct nodo *raiz){
-    
-    if (verificaPropriedades(raiz)>0) {
+	//FunÁ„o que verifica a ·vore aplicando o verificaPropriedades
+	//Se verificaPropriedades retornar algo maior que 0, ser· o valor da altura negra
+	//e a ·rvore consequentemente est· OK
+    if (verificaPropriedades(raiz)>0){
         return 1;
     }else{
         return 0;
     }
-    
 }
 
-
-
 struct nodo *criaNodo ( int valor ){
+	//FunÁ„o que cria um novo nodo com o valor recebido
     struct nodo *novoNodo = (struct nodo*)malloc ( sizeof *novoNodo);
-    
-    if ( novoNodo != NULL ) {
+    if( novoNodo != NULL ){
         novoNodo->valor = valor;
         novoNodo->cor = VERMELHO;
         novoNodo->nodos[ESQUERDA] = NULL;
         novoNodo->nodos[DIREITA] = NULL;
     }
-    
     return novoNodo;
 }
 
-struct nodoprint *criaNodoPrint ( char *valor ){
-
-    struct nodoprint *novoNodo = (struct nodoprint*)malloc ( sizeof *novoNodo);
-    
-    if ( novoNodo != NULL ) {
-        
-        
-        novoNodo->valor = valor;
-        
-        novoNodo->nodos[ESQUERDA] = NULL;
-    }
-    
-    return novoNodo;
-}
-
-/* TELETAR
-struct nodo *insereR ( struct nodo *raiz, int valor )
-{
-    if ( raiz == NULL )
-        raiz = criaNodo ( valor );
-    else if ( valor != raiz->valor ) {
-        int direcao = raiz->valor < valor;
-        
-        raiz->nodos[direcao] = insereR ( raiz->nodos[direcao], valor );
-        
-        if ( checaVermelho ( raiz->nodos[direcao] ) ) {
-            if ( checaVermelho ( raiz->nodos[!direcao] ) ) {
-                // Case 1
-                raiz->cor = VERMELHO;
-                raiz->nodos[ESQUERDA]->cor = PRETO;
-                raiz->nodos[DIREITA]->cor = PRETO;
-            }
-            else {
-                // Cases 2 & 3
-                if ( checaVermelho ( raiz->nodos[direcao]->nodos[direcao] ) )
-                    raiz = singular ( raiz, !direcao );
-                else if ( checaVermelho ( raiz->nodos[direcao]->nodos[!direcao] ) )
-                    raiz = duplo ( raiz, !direcao );
-            }
-        }
-    }
-    
-    return raiz;
-}
-
-
-struct nodo *removeR ( struct nodo *raiz, int valor, int *feito ){
-    if ( raiz == NULL )
-        *feito = 1;
-    else {
-        int direcao;
-        
-        if ( raiz->valor == valor ) {
-            if ( raiz->nodos[ESQUERDA] == NULL || raiz->nodos[DIREITA] == NULL ) {
-                struct nodo *guarda =
-                raiz->nodos[raiz->nodos[ESQUERDA] == NULL];
-                
-                // Case 0
-                if ( checaVermelho ( raiz ) )
-                    *feito = 1;
-                else if ( checaVermelho ( guarda ) ) {
-                    guarda->cor = PRETO;
-                    *feito = 1;
-                }
-                
-                free ( raiz );
-                
-                return guarda;
-            }
-            else {
-                struct nodo *herdeiro = raiz->nodos[ESQUERDA];
-                
-                while ( herdeiro->nodos[DIREITA] != NULL )
-                    herdeiro = herdeiro->nodos[DIREITA];
-                
-                raiz->valor = herdeiro->valor;
-                valor = herdeiro->valor;
-            }
-        }
-        
-        direcao = raiz->valor < valor;
-        raiz->nodos[direcao] = removeR ( raiz->nodos[direcao], valor, feito );
-        
-        if ( !*feito )
-            raiz = removeBalanceia ( raiz, direcao, feito );
-    }
-    
-    return raiz;
-}
-
-
-struct nodo *removeBalanceia ( struct nodo *raiz, int direcao, int *feito ){
-    struct nodo *p = raiz;
-    struct nodo *s = raiz->nodos[!direcao];
-    
-    // Case coruction, remover cor sibling
-    if ( checaVermelho ( s ) ) {
-        raiz = singular ( raiz, direcao );
-        s = p->nodos[!direcao];
-    }
-    
-    if ( s != NULL ) {
-        if ( !checaVermelho ( s->nodos[ESQUERDA] ) && !checaVermelho ( s->nodos[DIREITA] ) ) {
-            if ( checaVermelho ( p ) )
-                *feito = 1;
-            p->cor = PRETO;
-            s->cor = VERMELHO;
-        }
-        else {
-            int guarda = p->cor;
-            int new_raiz = ( raiz == p );
-            
-            if ( checaVermelho ( s->nodos[!direcao] ) )
-                p = singular ( p, direcao );
-            else
-                p = duplo ( p, direcao );
-            
-            p->cor = guarda;
-            p->nodos[ESQUERDA]->cor = PRETO;
-            p->nodos[DIREITA]->cor = PRETO;
-            
-            if ( new_raiz )
-                raiz = p;
-            else
-                raiz->nodos[direcao] = p;
-            
-            *feito = 1;
-        }
-    }
-    
-    return raiz;
-}
-
-*/
-
-int insere ( struct arvore *tree, int valor ){
-    if ( tree->raiz == NULL ) {
-        /* Empty tree case */
-        tree->raiz = criaNodo ( valor );
-        if ( tree->raiz == NULL )
-            return 0;
-    }
-    else {
-        struct nodo sentinela = {0};
-        
-        struct nodo *g, *t;     // Nodo avo e pai
-        struct nodo *p, *q;     // Nodo incremental e pai
+int insere ( struct arvore *arvre, int valor ){
+    if ( arvre->raiz == NULL ){
+        //Inserindo em uma ·vore vazia
+        arvre->raiz = criaNodo ( valor );
+        if ( arvre->raiz == NULL )
+            return 0;//Se depois de inserir continuar nulo retorna zero
+    }else{
+        struct nodo sentinela = {0};//Cria ·rea de memÛria para o sentinela
+        struct nodo *g, *t;    // Nodo avo e pai
+        struct nodo *p, *q;    // Nodo incremental e pai
         int direcao = 0, ultimo;
         
-        // Definição dos notos auxiliares
-        t = &sentinela;
+        //DefiniÁ„o dos nodos auxiliares
+        t = &sentinela;//Faz T receber o endereÁo de memÛria do sentinela
         g = p = NULL;
-        q = t->nodos[DIREITA] = tree->raiz;
+        q = t->nodos[DIREITA] = arvre->raiz;//Faz o nodo da direita do sentinela apontar para a raiz da ·rvore junto com o q
         
-        // Busca na árvore até ocorrer um break
+        //Busca na ·rvore atÈ ocorrer um break
         for ( ; ; ) {
-            if ( q == NULL ) {
+            if(q == NULL){//Na primeira vez n„o cai aqui
                 // Insere novo nodo no final
                 p->nodos[direcao] = q = criaNodo ( valor );
-                if ( q == NULL )
+                if ( q == NULL )//Se continuar 0 depois de inserir n„o deu certo
                     return 0;
-            }else if ( checaVermelho ( q->nodos[ESQUERDA] ) && checaVermelho ( q->nodos[DIREITA] ) ) {
-                // Inverte cor
+            }else if( checaVermelho ( q->nodos[ESQUERDA] ) && checaVermelho ( q->nodos[DIREITA] ) ){
+                //Se Q n„o for nulo e seus dois filhos forem vermelhos, ent„o eles viram pretos e Q fica vermelho
+                //Inverte cor
                 q->cor = VERMELHO;
                 q->nodos[ESQUERDA]->cor = PRETO;
                 q->nodos[DIREITA]->cor = PRETO;
             }
-            
             // Fix-up de cores
             if ( checaVermelho ( q ) && checaVermelho ( p ) ) {
                 int direcao2 = t->nodos[DIREITA] == g;
-                
                 if ( q == p->nodos[ultimo] )
-                    t->nodos[direcao2] = singular ( g, !ultimo );
+                    t->nodos[direcao2] = trocaSingular ( g, !ultimo );
                 else
-                    t->nodos[direcao2] = duplo ( g, !ultimo );
+                    t->nodos[direcao2] = trocaDupla ( g, !ultimo );
             }
-            
-            // Stop if found
+            //Se o valor j· existir na ·vore sai do laÁo
             if ( q->valor == valor )
                 break;
             
-            ultimo = direcao;
+            ultimo = direcao;//Salva a ˙ltima direÁ„o
+            //Se o valor atual do nodo (q->valor) for menor que o valor a ser inserido
+            //direÁ„o recebe 1 e a funÁ„o segue para a direita, se q->valor for maior que o valor atual
+            //ent„o direÁ„o recebe 0 e a funÁ„o segue para a esquerda
             direcao = q->valor < valor;
             
-            // Update helpers
+            
+            //Se G for diferente de null t recebe ele
             if ( g != NULL )
                 t = g;
+            //Faz o g apontar para o p
+            //Faz p apontar para o q (atual nodo)
+            //Faz q receber o nodo da direÁ„o que dever· ir
             g = p, p = q;
             q = q->nodos[direcao];
         }
-        
-        // Update raiz
-        tree->raiz = sentinela.nodos[DIREITA];
+        //Atualiza a raiz
+        arvre->raiz = sentinela.nodos[DIREITA];
     }
-    
-    // Make raiz PRETO
-    tree->raiz->cor = PRETO;
-    
+    //Muda a cor da raiz pra PRETO
+    arvre->raiz->cor = PRETO;
     return 1;
 }
 
-
-int remover ( struct arvore *tree, int valor ){
-    if ( tree->raiz != NULL ) {
+int remover ( struct arvore *arvre, int valor ){
+    if ( arvre->raiz != NULL ) {
         struct nodo sentinela = {0};
-        struct nodo *q, *p, *g; /* Nodos auxiliares */
-        struct nodo *f = NULL;  /* Nodo à ser encontrado */
+        struct nodo *q, *p, *g; // Nodos auxiliares
+        struct nodo *f = NULL;  // Nodo ‡ ser encontrado
         int direcao = 1;
         
-        /* Definição dos nodos auxiliares */
+        //DefiniÁ„o dos nodos auxiliares
         q = &sentinela;
         g = p = NULL;
-        q->nodos[DIREITA] = tree->raiz;
+        q->nodos[DIREITA] = arvre->raiz;
         
-        /* Localiza e  */
+        //Localiza o nodo
         while ( q->nodos[direcao] != NULL ) {
-            int ultimo = direcao;
+            int ultimo = direcao;//Salva a ˙ltima direÁ„o
             
-            /* Update helpers */
+            //Atualiza auxiliares
             g = p, p = q;
             q = q->nodos[direcao];
             direcao = q->valor < valor;
             
-            /* Save found node */
+            //Salva o nodo encontrado
             if ( q->valor == valor )
                 f = q;
             
-            /* Push the cor node down */
-            if ( !checaVermelho ( q ) && !checaVermelho ( q->nodos[direcao] ) ) {
-                if ( checaVermelho ( q->nodos[!direcao] ) )
-                    p = p->nodos[ultimo] = singular ( q, direcao );
-                else if ( !checaVermelho ( q->nodos[!direcao] ) ) {
-                    struct nodo *s = p->nodos[!ultimo];
-                    
-                    if ( s != NULL ) {
-                        if ( !checaVermelho ( s->nodos[!ultimo] ) && !checaVermelho ( s->nodos[ultimo] ) ) {
-                            /* Color flip */
+            //Joga a cor do nodo para baixo
+            if ( !checaVermelho ( q ) && !checaVermelho ( q->nodos[direcao] ) ){//Se eu for e meu filho fomos pretos
+                if ( checaVermelho ( q->nodos[!direcao] ) )//Se o filho oposto do anterior for vermelho
+                    p = p->nodos[ultimo] = trocaSingular ( q, direcao );//Faz a troca
+                else if ( !checaVermelho ( q->nodos[!direcao] ) ) {//Se o filho posto do anterior for preto
+                    struct nodo *s = p->nodos[!ultimo];//faz S apontar para P que nada mais È que o antigo valor de Q
+                    if ( s != NULL ) {//Se s N√O for NULL
+                        if ( !checaVermelho ( s->nodos[!ultimo] ) && !checaVermelho ( s->nodos[ultimo] ) ){
+                            //Se o nodo a esquerda e a direita de S forem pretos ent„o efetua a troca
+                            //Faz a troca de cores
                             p->cor = PRETO;
                             s->cor = VERMELHO;
                             q->cor = VERMELHO;
                         }else {
                             int direcao2 = g->nodos[DIREITA] == p;
                             
-                            if ( checaVermelho ( s->nodos[ultimo] ) )
-                                g->nodos[direcao2] = duplo ( p, ultimo );
-                            else if ( checaVermelho ( s->nodos[!ultimo] ) )
-                                g->nodos[direcao2] = singular ( p, ultimo );
+                            if ( checaVermelho ( s->nodos[ultimo] ) )//Se este nodo for vermelho ent„o efetua troca dupla
+                                g->nodos[direcao2] = trocaDupla ( p, ultimo );
+                            else if ( checaVermelho ( s->nodos[!ultimo] ) )//Se este nodo for vermelho efetua troca simples
+                                g->nodos[direcao2] = trocaSingular ( p, ultimo );
                             
-                            /* Ensure correct coloring */
+                            //Garante a coloraÁ„o dos nodos
                             q->cor = g->nodos[direcao2]->cor = VERMELHO;
                             g->nodos[direcao2]->nodos[ESQUERDA]->cor = PRETO;
                             g->nodos[direcao2]->nodos[DIREITA]->cor = PRETO;
@@ -421,7 +267,7 @@ int remover ( struct arvore *tree, int valor ){
             }
         }
         
-        /* Replace and remover if found */
+        //Substitui e remove se encontrou
         if ( f != NULL ) {
             f->valor = q->valor;
             p->nodos[p->nodos[DIREITA] == q] =
@@ -429,29 +275,28 @@ int remover ( struct arvore *tree, int valor ){
             free ( q );
         }
         
-        /* Update raiz and make it PRETO */
-        tree->raiz = sentinela.nodos[DIREITA];
-        if ( tree->raiz != NULL )
-            tree->raiz->cor = PRETO;
+        //Faz a raiz PRETA
+        arvre->raiz = sentinela.nodos[DIREITA];
+        if ( arvre->raiz != NULL )
+            arvre->raiz->cor = PRETO;
     }
-    
     return 1;
 }
 
-struct nodo *search_node(int valorBusca, struct nodo *t){
-    
+struct nodo *procuraNodo(int valorBusca, struct nodo *t){
+    //Se a ·vore for NULL
 	if (t == NULL){
 		return NULL;
 	}else{
-        struct nodo *found;
+        struct nodo *found;//Ponteiro para nodo encontrado
         
-        if(t->valor == valorBusca){
+        if(t->valor == valorBusca){//Se o valor do nodo atual for o desejado retorna o nodo atual
 			return t;
 		}else{
-		//	struct nodo *found;
-			found = search_node(valorBusca,t->nodos[ESQUERDA]);
-            if(found == NULL){
-                found = search_node(valorBusca,t->nodos[DIREITA]);
+            //Entra aqui caso n„o encontrou o valor procurado
+			found = procuraNodo(valorBusca,t->nodos[ESQUERDA]);//Procura para a esquerda
+            if(found == NULL){//Caso n„o ache na esquerda
+                found = procuraNodo(valorBusca,t->nodos[DIREITA]);//Procura para a direita
             }
         }
         return found;
@@ -459,44 +304,37 @@ struct nodo *search_node(int valorBusca, struct nodo *t){
     return NULL;
 }
 
-void Tree_inOrder(struct nodo *n, FILE *outputFile){
-
+void emOrdem(struct nodo *n, FILE *outputFile){
+    
     if(n==0){
         return;
     }
-    Tree_inOrder(n->nodos[ESQUERDA], outputFile);
+    emOrdem(n->nodos[ESQUERDA], outputFile);
     if (outputFile) {
         char puts[30] = "";
         strtol(puts, (char **)NULL, n->valor);
- //       printf("puts[%s][%d]", puts, n->valor);
-      
+        //       printf("puts[%s][%d]", puts, n->valor);
+        
         sprintf(puts, "%d ",n->valor);
         fputs(puts, outputFile);
-        printf(" %s", puts);
+        // printf(" %s", puts);
     }else{
         printf("%d ", n->valor);
     }
-    
-    Tree_inOrder(n->nodos[DIREITA], outputFile);
-    
+    emOrdem(n->nodos[DIREITA], outputFile);
 }
 
-
-void print_at_level_recursive(struct nodo *n, int desejado, int atual)
-{
-    
-    if (n)
-    {
+void imprimeRecursivo(struct nodo *n, int desejado, int atual){
+    //Imprime os valores de um sÛ nÌvel
+    if (n){
         if (desejado == atual)
             printf("%d ", n->valor);
-        else
-        {
-            print_at_level_recursive(n->nodos[ESQUERDA], desejado, atual + 1);
-            print_at_level_recursive(n->nodos[DIREITA], desejado, atual + 1);
+        else{
+            imprimeRecursivo(n->nodos[ESQUERDA], desejado, atual + 1);
+            imprimeRecursivo(n->nodos[DIREITA], desejado, atual + 1);
         }
     }
 }
-
 
 void menu(){
     
@@ -508,12 +346,12 @@ void menu(){
     printf("\n6 - Imprimir arvore, dinstinguir estrutura");
     printf("\n7 - Verificar propriedades preto-vermelho");
     printf("\n8 - Sair");
-    
-    printf("\nDigite opção: ");
+    printf("\nDigite opÁ„o: ");
     
 }
 
 int verificaNodo(struct nodo *n){
+    //FunÁ„o que verifica se um novo È v·lido ou n„o
     if (n) {
         return 1;
     }else{
@@ -521,239 +359,187 @@ int verificaNodo(struct nodo *n){
     }
 }
 
-void getStringLevel(struct nodo *pressNode, struct nodo *n, int desired, int current)
-{
-    
-    
-    //if (n)
-    //{
-        if (desired == current){
-            
-            struct nodo *aNode = NULL;
-                
-            if (pressNode) {
-                aNode = pressNode;
-                
-                while (aNode->nodos[ESQUERDA]) {
-                    aNode = aNode->nodos[ESQUERDA];
-                }
-                if (n) {
-                    struct nodo *valueNode = criaNodo(n->valor);
-                    valueNode->cor = n->cor;
-                    aNode->nodos[ESQUERDA] = valueNode;
-                    
-                }else{
-                    struct nodo *valueNode = criaNodo(NIL);
-                    valueNode->cor = 0;
-                    aNode->nodos[ESQUERDA] = valueNode;
-
-                }
-                
-            }else{
-                if (n) {
-                    pressNode = criaNodo(n->valor);
-                    pressNode->cor = n->cor;
-                }else{
-                    pressNode = criaNodo(NIL);
-                    pressNode->cor = n->cor;
-                    
-                    
-                }
-                
-            }
-
-        }else{
-            if (n->nodos[ESQUERDA]) {
-                getStringLevel(pressNode, n->nodos[ESQUERDA], desired, current + 1);
-            }else{
-                pressNode->nodos[ESQUERDA] = criaNodo(NIL);
-            }
-            if (n->nodos[DIREITA]) {
-                getStringLevel(pressNode, n->nodos[DIREITA], desired, current + 1);
-            }else{
-                pressNode->nodos[ESQUERDA] = criaNodo(NIL);
-            }
+void criaListaNivel(struct nodo *pressNode, struct nodo *n, int desejado, int atual){
+    //Retorna somente o nÌvel da ·vore desejado atravÈs de uma lista encadeada com os nodos
+    //Coloca os dados encontrados dentro do nodo pressNode que funciona como uma lista encadeada
+    if (desejado == atual){
+        struct nodo *aNode = NULL;
         
+        if (pressNode) {
+            aNode = pressNode;
+            
+            while (aNode->nodos[ESQUERDA]){
+                aNode = aNode->nodos[ESQUERDA];
+            }
+            if (n){
+                struct nodo *valueNode = criaNodo(n->valor);
+                valueNode->cor = n->cor;
+                aNode->nodos[ESQUERDA] = valueNode;
+                
+            }else{
+                struct nodo *valueNode = criaNodo(INT_MAX);
+                valueNode->cor = 0;
+                aNode->nodos[ESQUERDA] = valueNode;
+                
+            }
+            
+        }else{
+            if(n){
+                pressNode = criaNodo(n->valor);
+                pressNode->cor = n->cor;
+            }else{
+                pressNode = criaNodo(INT_MAX);
+                pressNode->cor = n->cor;
+            }
         }
-    //}
-    
-    
-    
+    }else{//Vai percorrendo atÈ achar o nÌvel desejado
+        if (n->nodos[ESQUERDA]){
+            criaListaNivel(pressNode, n->nodos[ESQUERDA], desejado, atual + 1);
+        }else{
+            pressNode->nodos[ESQUERDA] = criaNodo(INT_MAX);
+        }
+        if (n->nodos[DIREITA]){
+            criaListaNivel(pressNode, n->nodos[DIREITA], desejado, atual + 1);
+        }else{
+            pressNode->nodos[ESQUERDA] = criaNodo(INT_MAX);
+        }
+        
+    }
 }
 
-
-void center_print(const char *s, int width)
-{
+void impressaoCentralizada(const char *s, int width){
+    //FunÁ„o que imprime centralizadamente na tela
     int length = (int)strlen(s);
     int i;
-    for (i=0; i<=(width-length)/2; i++) {
+    for (i=0; i<=(width-length)/2; i++){
         fputs(" ", stdout);
     }
     fputs(s, stdout);
     i += length;
-    for (; i<=width; i++) {
+    for (; i<=width; i++){
         fputs(" ", stdout);
     }
 }
 
-int alturaArvore(struct nodo *root) {
-    
-    if (!root){
+int alturaArvore(struct nodo *root){
+    //FunÁ„o que retorna a altura geral da ·vore
+    if (!root){//Se a raiz for NULA retorna zero
         return 0;
-    }else if(root->valor){
+    }else if(root->valor){//Se existir um valor que n„o for NULO
         int esquerda = 0;
-        if (root->nodos[ESQUERDA]) {
+        if (root->nodos[ESQUERDA]){//Conta todo o lado esquerdo
             esquerda = alturaArvore(root->nodos[ESQUERDA]);
         }
         int direita = 0;
-        if (root->nodos[DIREITA]) {
+        if (root->nodos[DIREITA]){//Conta todo o lado direito
             direita = alturaArvore(root->nodos[DIREITA]);
         }
-        return esquerda+direita+1;
+        return esquerda+direita+1;//Retorna esquerda + direita + raiz
     }
     return 0;
 }
 
-void printLevelTree(struct nodo *root){
+void imprimeNiveisArvore(struct nodo *root){
     int x = 0;
-    
-    while (1) {
-        
-    
-    //for (int x = 0; x<alturaArvore(root); x++) {
+    //Imprime toda a ·vore, nÌvel por nÌvel
+    while (1){
         struct nodo *printnode = criaNodo(0);
         
-        getStringLevel(printnode, root, x, 0);
+        criaListaNivel(printnode, root, x, 0);
         if (!printnode->nodos[ESQUERDA]) {
             break;
         }
         printnode = printnode->nodos[ESQUERDA];
         char line[600] = "";
-        //char *lines = "500";
-        
-        // struct nodoprint *imprime = criaNodoPrint(lines);
-        //printf("%s", imprime->valor);
         
         while (printnode) {
-            //printf("-> %d ", printnode->data);
             char data[80];
-            if (printnode->valor == NIL) {
+            if (printnode->valor == INT_MAX) {
                 
                 strcat(line, " (nil)");
                 
             }else{
-                //for (int z = 0; z<=x; z++) {
-                    strcat(line, "  ");
-                //}
+                strcat(line, "  ");
                 if (printnode->cor) {
                     sprintf(data, "(%d)", printnode->valor);
                 }else{
                     sprintf(data, "[%d]", printnode->valor);
                 }
-                //    puts(str);
-                
                 strcat(line, data);
-                
             }
-            
             printnode = printnode->nodos[ESQUERDA];
-            
-            
         }
-
         
         char nil[600] = "(nil)/";
-        if (strlen(line) == strlen(nil)) {
+        if (strlen(line) == strlen(nil)){
             break;
         }
         printf("\n");
-        center_print(line, 60);
+        impressaoCentralizada(line, 60);
         x++;
     }
- 
-    
 }
 
 void modoInterface(struct arvore *raiz){
-    
+    //FunÁ„o do modo interface
     int valor = 0;
-    
     int opcao = 0;
-    while (opcao!=8) {
-        
+    while (opcao!=8){
         menu();
         scanf("%d", &opcao);
-        
-        
-        if (opcao!=8) {
-            switch (opcao) {
+        if (opcao!=8){
+            switch (opcao){
                 case 1:
-                    
                     printf("\n Valor a ser inserido: ");
                     scanf("%d", &valor);
                     insere(raiz, valor);
-                    
-                    
                     break;
                 case 2:
                     printf("\n Valor a ser removido: ");
                     scanf("%d", &valor);
-                    
                     remover ( raiz, valor );
                     break;
                 case 3:
-                    Tree_inOrder(raiz->raiz, NULL);
+                    emOrdem(raiz->raiz, NULL);
                     break;
                 case 4:
                     printf("\n Nivel a ser impresso: ");
                     scanf("%d", &valor);
-                    print_at_level_recursive(raiz->raiz, valor, 0);
+                    imprimeRecursivo(raiz->raiz, valor, 0);
                     break;
                 case 5:
-                    printf("\n Valor à ser procurado: ");
+                    printf("\n Valor ‡ ser procurado: ");
                     scanf("%d", &valor);
                     
-                    if(verificaNodo(search_node(valor, raiz->raiz))){
+                    if(verificaNodo(procuraNodo(valor, raiz->raiz))){
                         printf("TRUE");
                     }else{
                         printf("FALSE");
                     }
-                    
                     break;
                 case 6:
-                    
-                    printLevelTree(raiz->raiz);
-                    
-                    
+                    imprimeNiveisArvore(raiz->raiz);
                     break;
                 case 7:
-                    
                     if(verificaArvore(raiz->raiz)){
                         printf("TRUE");
                     }else{
                         printf("FALSE");
                     }
-                    
-                    /*   printf("\n Largura ");
-                     scanf("%d", &valor);
-                     center_print("mouro", valor);
-                     
-                     */
                     break;
                 default:
                     break;
             }
         }
-        
     }
-    
-
 }
 
-static char *fgetline(FILE *f)
-{
+static char *fgetline(FILE *f){
+    //FunÁ„o que lÍ linha por linha do arquivo recebido
     size_t len;
-    char *line= fgetln(f, &len);
+    char *line;
+    line = fgetln(f, &len);
+    //line = fgetline(f);
     if (line == 0) return 0;
     char *buf= malloc(len+1);
     if (buf == 0) return 0;
@@ -762,193 +548,103 @@ static char *fgetline(FILE *f)
     return buf;
 }
 
-
-int main(int argc, const char * argv[])
-{
+int main(int argc, const char * argv[]){
     int debug = 1;
     
     struct arvore *raiz = malloc(sizeof(Nodo));
-
     
-    if ( argc != 2 ) //numero de argumentos deve ser 2 para correta execução com nome do arquivo
+    if ( argc != 2 ) //numero de argumentos deve ser 2 para correta execuÁ„o com nome do arquivo
     {
-        /* argv[0] é o nome da aplicação sendo executada */
-        printf( "Não foram passados argumentos, executando modo interface. \n\nPara passar argumentos execute: %s nomeDoArquivo\n\n", argv[0] );
+        /* argv[0] È o nome da aplicaÁ„o sendo executada */
+        printf( "N„o foram passados argumentos, executando modo interface. \n\nPara passar argumentos execute: %s nomeDoArquivo\n\n", argv[0] );
         int larguraDisplay = 80;
-        center_print("=================================", larguraDisplay);
+        impressaoCentralizada("=================================", larguraDisplay);
         printf("\n");
-        center_print("ÁRVORE RUBRO-NEGRA", larguraDisplay);
+        impressaoCentralizada("¡RVORE RUBRO-NEGRA", larguraDisplay);
         printf("\n");
-        center_print("=================================", larguraDisplay);
+        impressaoCentralizada("=================================", larguraDisplay);
         printf("\n");
         modoInterface(raiz);
         
         
-    }
-    else
-    {
-    
-        // argv[1] deve ser o nome do arquivo à ser aberto
-        FILE *input = fopen( argv[1], "r" );
+    }else{
+        
+        // argv[1] deve ser o nome do arquivo ‡ ser aberto
+        FILE *arquivoEntrada = fopen( argv[1], "r" );
         if (debug) printf("Abrindo arquivo -> %s ", argv[1]);
         /* fopen retorna 0 se houve algum erro. */
-        if ( input == 0 )
-        {
-            if (debug) printf("\n\nNão foi possível abrir o arquivo, executando modo interface.\n\n");
+        if ( arquivoEntrada == 0 ){
+            if (debug) printf("\n\nN„o foi possÌvel abrir o arquivo, executando modo interface.\n\n");
             modoInterface(raiz);
-        }
-        else
-        {
+        }else{
             char *x;
-            char *path = (char*)argv[1];
-            FILE *output = fopen(strcat(strtok(path, "."), ".expected"), "w+" );
-            if (debug) printf("\n\noutput: %s \n\n",strcat(strtok(path, "."), ".output"));
-            
-            if (input) {
-                int inputline = 0;
-                int outputline = 0;
-                while  ( ( x = fgetline(input) ))
+            char *path = (char*)argv[1]; //nome do arquivo de saÌda ser· nomeDoArquivoDeEntrada+.output
+            FILE *arquivoSaida = fopen(strcat(strtok(path, "."), ".output"), "w+" );
+            if (debug) printf("\n\nArquivo de saida: %s \n\n",strcat(strtok(path, "."), ".output"));
+            if (arquivoEntrada) {
+                int linhaEntrada = 0;
+                int linhaSaida = 0;
+                while  ( ( x = fgetline(arquivoEntrada) ))
                 {
-                    inputline++;
+                    linhaEntrada++;
                     char *funcao, *valor;
                     char *explode = " ";
                     funcao = strtok(x, explode);
                     valor = strtok(NULL, explode);
                     
-                    
-                    if (inputline==994) {
-                        
-                    }
-                    
-                    if (strcmp(funcao, "insert")==0) {
-                        if (valor) {
-                            if (debug) printf("line %d || insert %d \n",inputline, atoi(valor));
+                    if (strcmp(funcao, "insert")==0){
+                        if (valor){
+                            if (debug) printf("linhaEntrada %d || insert %d \n",linhaEntrada, atoi(valor));
                             insere(raiz, atoi(valor));
                         }else{
                             if (debug) printf("valor invalido");
                         }
-                    
-                    
-                    
-                    
-                    }
-                    
-                    
-                    else if (strcmp(funcao, "search")==0) {
-                        if (valor) {
-                            outputline++;
-                            if (debug) printf("line %d || search %d ||",inputline, atoi(valor));
-                            if(verificaNodo(search_node(atoi(valor), raiz->raiz))){
-                                if (debug) printf(" outputline %d || TRUE", outputline);
-                                fputs("true\n", output);
-                                
+                    }else if(strcmp(funcao, "search")==0){
+                        if (valor){
+                            linhaSaida++;
+                            if (debug) printf("linhaEntrada %d || search %d ||",linhaEntrada, atoi(valor));
+                            if(verificaNodo(procuraNodo(atoi(valor), raiz->raiz))){
+                                if (debug) printf(" linhaSaida %d || TRUE", linhaSaida);
+                                fputs("true\n", arquivoSaida);
                             }else{
-                                fputs("false\n", output);
-
-                                if (debug) printf(" outputline %d || FALSE ", outputline);
+                                fputs("false\n", arquivoSaida);
+                                if (debug) printf(" linhaSaida %d || FALSE ", linhaSaida);
                             }
                             if (debug) printf("\n");
                         }else{
                             if (debug) printf("valor invalido");
                         }
-                    
-                    
-                    
-                    
-                    }
-                    
-                    
-                    
-                    else if (strcmp(funcao, "delete")==0) {
+                        
+                    }else if (strcmp(funcao, "delete")==0) {
                         if (valor) {
-                            if (debug) printf("line %d || delete %d \n",inputline, atoi(valor));
+                            if (debug) printf("linhaEntrada %d || delete %d \n",linhaEntrada, atoi(valor));
                             
                             remover(raiz, atoi(valor));
                         }else{
                             if (debug) printf("valor invalido");
                         }
-                    
-                    
-                    
-                    }
-                    
-                    
-                    
-                    
-                    else if (strcmp(x, "inorder\n")==0) {
-                        outputline++;
-                        if (debug) printf("line %d || inorder", inputline);
-                        Tree_inOrder(raiz->raiz, output);
-                        printf("tell %ld", ftell(output));
-                        fseek(output, -sizeof(char), SEEK_CUR);
-                        printf("tell %ld", ftell(output));
-                        
-                        fputs("\n", output);
-                        printf(" || outputline %d", outputline);
+                    }else if (strcmp(x, "inorder\n")==0) {
+                        linhaSaida++;
+                        if (debug) printf("linhaEntrada %d || inorder", linhaEntrada);
+                        emOrdem(raiz->raiz, arquivoSaida);
+                        fseek(arquivoSaida, -sizeof(char), SEEK_CUR);
+                        fputs("\n", arquivoSaida);
+                        if (debug) printf(" || linhaSaida %d", linhaSaida);
                         if (debug) printf("\n");
-                        
-                        
-                    
                     }
-                    printf("\n");
+                    if (debug) printf("\n");
                 }
-                fclose(input);
-                fclose(output);
+                fclose(arquivoEntrada);
+                fclose(arquivoSaida);
             }
         }
-    
+        
         if (debug) printf("\n\n-----------------\n");
         if (debug) printf("\n\n-----------------\n");
         if (debug) printf("\n\nLeitura ok, enter para modo interface\n");
-        
-        
-        getchar();
-        getchar();
-        
-        modoInterface(raiz);
-    
+        if (debug) getchar();
+        if (debug) modoInterface(raiz);
     }
-    
-    
-    
-    
-    
-    /*
-    insere(raiz, 4321);
-    insere(raiz, 212);
-    insere(raiz, 3432);
-    insere(raiz, 412);
-    insere(raiz, 5435);
-    insere(raiz, 636);
-    insere(raiz, 7654);
-    insere(raiz, 812);
-    insere(raiz, 923);
-    insere(raiz, 1230);
-    insere(raiz, 135);
-    insere(raiz, 116);
-    insere(raiz, 172);
-    insere(raiz, 18);
-    insere(raiz, 19);
-    insere(raiz, 21);
-    insere(raiz, 33);
-    insere(raiz, 22);
-    insere(raiz, 33);
-    insere(raiz, 44);
-    insere(raiz, 55);
-    insere(raiz, 66);
-    insere(raiz, 77);
-    insere(raiz, 88);
-    insere(raiz, 99);
-    insere(raiz, 98);
-    insere(raiz, 87);
-    insere(raiz, 76);
-    insere(raiz, 65);
-    insere(raiz, 43);
-    */
- //   int numero = 2;
-    
-        // insert code here...
-    
     return 0;
 }
 
